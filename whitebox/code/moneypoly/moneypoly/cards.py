@@ -1,3 +1,5 @@
+"""Chance and Community Chest card data with deck iteration helpers."""
+
 import random
 
 CHANCE_CARDS = [
