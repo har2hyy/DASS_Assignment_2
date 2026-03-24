@@ -1,0 +1,338 @@
+digraph MoneyPolyCFG {
+    rankdir=TB;
+    splines=true;
+    fontname="Helvetica";
+    labelloc=t;
+    label="MoneyPoly Control Flow Graph (Simplified)";
+
+    node [fontname="Helvetica", style=filled, penwidth=1.1];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Node styles by type
+    ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="ENTRY/EXIT style"];
+    COND [shape=diamond, fillcolor="#FFDADA", label="COND style"];
+    PROC [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="PROC style"];
+    CALL [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="CALL style"];
+
+    // Hide style keys from graph body; a legend cluster is provided below.
+    ENTRY -> COND [style=invis];
+    COND -> PROC [style=invis];
+    PROC -> CALL [style=invis];
+
+    subgraph cluster_main_py {
+        label="main.py";
+        color="#9AA7B2";
+
+        main_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="main_ENTRY"];
+        main_CALL_get_names [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="main_CALL_get_player_names"];
+        main_PROC_construct [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="main_PROC_build_game"];
+        main_COND_try [shape=diamond, fillcolor="#FFDADA", label="main_COND_error?"];
+        main_PROC_run [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="main_CALL_run"];
+        main_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="main_EXIT"];
+
+        names_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="get_player_names_ENTRY"];
+        names_PROC_read [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="get_player_names_PROC_parse_input"];
+        names_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="get_player_names_EXIT"];
+
+        names_ENTRY -> names_PROC_read -> names_EXIT;
+
+        main_ENTRY -> main_CALL_get_names -> main_PROC_construct -> main_COND_try;
+        main_COND_try -> main_PROC_run [label="no exception"];
+        main_COND_try -> main_EXIT [label="KeyboardInterrupt/ValueError"];
+        main_PROC_run -> main_EXIT;
+    }
+
+    subgraph cluster_player {
+        label="player.py";
+        color="#9AA7B2";
+
+        player_move_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="move_ENTRY"];
+        player_move_PROC_update [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="move_PROC_update_position"];
+        player_move_COND_go [shape=diamond, fillcolor="#FFDADA", label="move_COND_passed_or_landed_go?"];
+        player_move_PROC_salary [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="move_PROC_add_go_salary"];
+        player_move_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="move_EXIT"];
+
+        player_net_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="net_worth_ENTRY"];
+        player_net_PROC_calc [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="net_worth_PROC_compute_total"];
+        player_net_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="net_worth_EXIT"];
+
+        player_move_ENTRY -> player_move_PROC_update -> player_move_COND_go;
+        player_move_COND_go -> player_move_PROC_salary [label="yes"];
+        player_move_COND_go -> player_move_EXIT [label="no"];
+        player_move_PROC_salary -> player_move_EXIT;
+
+        player_net_ENTRY -> player_net_PROC_calc -> player_net_EXIT;
+    }
+
+    subgraph cluster_dice {
+        label="dice.py";
+        color="#9AA7B2";
+
+        dice_roll_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="roll_ENTRY"];
+        dice_roll_PROC_rng [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="roll_PROC_rng_2d6"];
+        dice_roll_COND_doubles [shape=diamond, fillcolor="#FFDADA", label="roll_COND_doubles?"];
+        dice_roll_PROC_streak_inc [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="roll_PROC_inc_streak"];
+        dice_roll_PROC_streak_reset [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="roll_PROC_reset_streak"];
+        dice_roll_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="roll_EXIT"];
+
+        dice_roll_ENTRY -> dice_roll_PROC_rng -> dice_roll_COND_doubles;
+        dice_roll_COND_doubles -> dice_roll_PROC_streak_inc [label="yes"];
+        dice_roll_COND_doubles -> dice_roll_PROC_streak_reset [label="no"];
+        dice_roll_PROC_streak_inc -> dice_roll_EXIT;
+        dice_roll_PROC_streak_reset -> dice_roll_EXIT;
+    }
+
+    subgraph cluster_property {
+        label="property.py";
+        color="#9AA7B2";
+
+        rent_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="get_rent_ENTRY"];
+        rent_COND_mortgaged [shape=diamond, fillcolor="#FFDADA", label="get_rent_COND_mortgaged?"];
+        rent_COND_full_group [shape=diamond, fillcolor="#FFDADA", label="get_rent_COND_full_group?"];
+        rent_PROC_double [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="get_rent_PROC_double_base"];
+        rent_PROC_base [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="get_rent_PROC_base"];
+        rent_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="get_rent_EXIT"];
+
+        rent_ENTRY -> rent_COND_mortgaged;
+        rent_COND_mortgaged -> rent_EXIT [label="yes -> 0"];
+        rent_COND_mortgaged -> rent_COND_full_group [label="no"];
+        rent_COND_full_group -> rent_PROC_double [label="yes"];
+        rent_COND_full_group -> rent_PROC_base [label="no"];
+        rent_PROC_double -> rent_EXIT;
+        rent_PROC_base -> rent_EXIT;
+    }
+
+    subgraph cluster_game {
+        label="game.py";
+        color="#9AA7B2";
+
+        g_init_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="__init___ENTRY"];
+        g_init_PROC_setup [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="__init___PROC_setup_state"];
+        g_init_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="__init___EXIT"];
+        g_init_ENTRY -> g_init_PROC_setup -> g_init_EXIT;
+
+        run_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="run_ENTRY"];
+        run_COND_continue [shape=diamond, fillcolor="#FFDADA", label="run_COND_continue?(running && turns<MAX && players>1)"];
+        run_CALL_play_turn [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="run_CALL_play_turn"];
+        run_PROC_standings [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="run_PROC_print_standings"];
+        run_CALL_find_winner [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="run_CALL_find_winner"];
+        run_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="run_EXIT"];
+
+        run_ENTRY -> run_COND_continue;
+        run_COND_continue -> run_CALL_play_turn [label="true"];
+        run_CALL_play_turn -> run_PROC_standings -> run_COND_continue [label="next_iteration"];
+        run_COND_continue -> run_CALL_find_winner [label="false"];
+        run_CALL_find_winner -> run_EXIT;
+
+        turn_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="play_turn_ENTRY"];
+        turn_COND_jail [shape=diamond, fillcolor="#FFDADA", label="play_turn_COND_in_jail?"];
+        turn_CALL_jail [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="play_turn_CALL_handle_jail_turn"];
+        turn_CALL_roll [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="play_turn_CALL_dice_roll"];
+        turn_COND_triple [shape=diamond, fillcolor="#FFDADA", label="play_turn_COND_triple_doubles?"];
+        turn_PROC_jail [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="play_turn_PROC_send_to_jail"];
+        turn_CALL_move [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="play_turn_CALL_move_and_resolve"];
+        turn_COND_extra [shape=diamond, fillcolor="#FFDADA", label="play_turn_COND_doubles_extra?"];
+        turn_PROC_advance [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="play_turn_PROC_advance_turn"];
+        turn_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="play_turn_EXIT"];
+
+        turn_ENTRY -> turn_COND_jail;
+        turn_COND_jail -> turn_CALL_jail [label="yes"];
+        turn_CALL_jail -> turn_PROC_advance -> turn_EXIT;
+        turn_COND_jail -> turn_CALL_roll [label="no"];
+        turn_CALL_roll -> turn_COND_triple;
+        turn_COND_triple -> turn_PROC_jail [label="yes"];
+        turn_PROC_jail -> turn_PROC_advance;
+        turn_COND_triple -> turn_CALL_move [label="no"];
+        turn_CALL_move -> turn_COND_extra;
+        turn_COND_extra -> turn_EXIT [label="yes"];
+        turn_COND_extra -> turn_PROC_advance [label="no"];
+
+        move_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="_move_and_resolve_ENTRY"];
+        move_CALL_player [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="_move_and_resolve_CALL_player_move"];
+        move_COND_tile [shape=diamond, fillcolor="#FFDADA", label="_move_and_resolve_COND_tile_type"];
+        move_PROC_gojail [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="tile_PROC_go_to_jail"];
+        move_PROC_income [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="tile_PROC_income_tax"];
+        move_PROC_luxury [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="tile_PROC_luxury_tax"];
+        move_PROC_free [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="tile_PROC_free_parking"];
+        move_CALL_chance [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="tile_CALL_apply_card(chance)"];
+        move_CALL_chest [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="tile_CALL_apply_card(chest)"];
+        move_CALL_property [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="tile_CALL_handle_property_tile"];
+        move_PROC_blank [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="tile_PROC_blank_noop"];
+        move_CALL_bankrupt [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="_move_and_resolve_CALL_check_bankruptcy"];
+        move_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="_move_and_resolve_EXIT"];
+
+        move_ENTRY -> move_CALL_player -> move_COND_tile;
+        move_COND_tile -> move_PROC_gojail [label="go_to_jail"];
+        move_COND_tile -> move_PROC_income [label="income_tax"];
+        move_COND_tile -> move_PROC_luxury [label="luxury_tax"];
+        move_COND_tile -> move_PROC_free [label="free_parking"];
+        move_COND_tile -> move_CALL_chance [label="chance"];
+        move_COND_tile -> move_CALL_chest [label="community_chest"];
+        move_COND_tile -> move_CALL_property [label="railroad/property"];
+        move_COND_tile -> move_PROC_blank [label="blank/other"];
+        move_PROC_gojail -> move_CALL_bankrupt;
+        move_PROC_income -> move_CALL_bankrupt;
+        move_PROC_luxury -> move_CALL_bankrupt;
+        move_PROC_free -> move_CALL_bankrupt;
+        move_CALL_chance -> move_CALL_bankrupt;
+        move_CALL_chest -> move_CALL_bankrupt;
+        move_CALL_property -> move_CALL_bankrupt;
+        move_PROC_blank -> move_CALL_bankrupt;
+        move_CALL_bankrupt -> move_EXIT;
+
+        prop_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="_handle_property_tile_ENTRY"];
+        prop_COND_owner [shape=diamond, fillcolor="#FFDADA", label="_handle_property_tile_COND_owner_state"];
+        prop_COND_choice [shape=diamond, fillcolor="#FFDADA", label="_handle_property_tile_COND_buy/auction/skip"];
+        prop_CALL_buy [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="CALL_buy_property"];
+        prop_CALL_auction [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="CALL_auction_property"];
+        prop_PROC_skip [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="PROC_skip"];
+        prop_PROC_owned [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="PROC_owned_by_self"];
+        prop_CALL_rent [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="CALL_pay_rent"];
+        prop_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="_handle_property_tile_EXIT"];
+
+        prop_ENTRY -> prop_COND_owner;
+        prop_COND_owner -> prop_COND_choice [label="unowned"];
+        prop_COND_owner -> prop_PROC_owned [label="owned_by_self"];
+        prop_COND_owner -> prop_CALL_rent [label="owned_by_other"];
+        prop_COND_choice -> prop_CALL_buy [label="buy"];
+        prop_COND_choice -> prop_CALL_auction [label="auction"];
+        prop_COND_choice -> prop_PROC_skip [label="skip"];
+        prop_CALL_buy -> prop_EXIT;
+        prop_CALL_auction -> prop_EXIT;
+        prop_PROC_skip -> prop_EXIT;
+        prop_PROC_owned -> prop_EXIT;
+        prop_CALL_rent -> prop_EXIT;
+
+        buy_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="buy_property_ENTRY"];
+        buy_COND_balance [shape=diamond, fillcolor="#FFDADA", label="buy_property_COND_can_afford?"];
+        buy_PROC_assign [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="buy_property_PROC_transfer_and_collect"];
+        buy_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="buy_property_EXIT"];
+
+        buy_ENTRY -> buy_COND_balance;
+        buy_COND_balance -> buy_EXIT [label="no"];
+        buy_COND_balance -> buy_PROC_assign [label="yes"];
+        buy_PROC_assign -> buy_EXIT;
+
+        rent_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="pay_rent_ENTRY"];
+        rent_COND_mort [shape=diamond, fillcolor="#FFDADA", label="pay_rent_COND_mortgaged?"];
+        rent_COND_owner [shape=diamond, fillcolor="#FFDADA", label="pay_rent_COND_owner_exists?"];
+        rent_PROC_transfer [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="pay_rent_PROC_deduct_and_credit"];
+        rent_EXIT2 [shape=ellipse, fillcolor="#D8EBFF", label="pay_rent_EXIT"];
+
+        rent_ENTRY -> rent_COND_mort;
+        rent_COND_mort -> rent_EXIT2 [label="yes"];
+        rent_COND_mort -> rent_COND_owner [label="no"];
+        rent_COND_owner -> rent_EXIT2 [label="no"];
+        rent_COND_owner -> rent_PROC_transfer [label="yes"];
+        rent_PROC_transfer -> rent_EXIT2;
+
+        jail_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="_handle_jail_turn_ENTRY"];
+        jail_COND_card [shape=diamond, fillcolor="#FFDADA", label="jail_COND_has_card_and_use?"];
+        jail_PROC_release_card [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="jail_PROC_release_via_card"];
+        jail_COND_pay [shape=diamond, fillcolor="#FFDADA", label="jail_COND_pay_fine?"];
+        jail_PROC_release_pay [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="jail_PROC_release_via_payment"];
+        jail_PROC_wait [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="jail_PROC_serve_turn"];
+        jail_COND_mandatory [shape=diamond, fillcolor="#FFDADA", label="jail_COND_turns>=3?"];
+        jail_PROC_release_mand [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="jail_PROC_mandatory_release"];
+        jail_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="_handle_jail_turn_EXIT"];
+
+        jail_ENTRY -> jail_COND_card;
+        jail_COND_card -> jail_PROC_release_card [label="yes"];
+        jail_COND_card -> jail_COND_pay [label="no"];
+        jail_PROC_release_card -> jail_EXIT;
+        jail_COND_pay -> jail_PROC_release_pay [label="yes"];
+        jail_COND_pay -> jail_PROC_wait [label="no"];
+        jail_PROC_release_pay -> jail_EXIT;
+        jail_PROC_wait -> jail_COND_mandatory;
+        jail_COND_mandatory -> jail_PROC_release_mand [label="yes"];
+        jail_COND_mandatory -> jail_EXIT [label="no"];
+        jail_PROC_release_mand -> jail_EXIT;
+
+        card_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="_apply_card_ENTRY"];
+        card_COND_none [shape=diamond, fillcolor="#FFDADA", label="_apply_card_COND_card_none?"];
+        card_COND_action [shape=diamond, fillcolor="#FFDADA", label="_apply_card_COND_action_type"];
+        card_PROC_collect [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_collect"];
+        card_PROC_pay [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_pay"];
+        card_PROC_jail [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_jail"];
+        card_PROC_jail_free [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_jail_free"];
+        card_PROC_move_to [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_move_to"];
+        card_PROC_birthday [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_birthday"];
+        card_PROC_collect_all [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="card_PROC_collect_from_all"];
+        card_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="_apply_card_EXIT"];
+
+        card_ENTRY -> card_COND_none;
+        card_COND_none -> card_EXIT [label="yes"];
+        card_COND_none -> card_COND_action [label="no"];
+        card_COND_action -> card_PROC_collect [label="collect"];
+        card_COND_action -> card_PROC_pay [label="pay"];
+        card_COND_action -> card_PROC_jail [label="jail"];
+        card_COND_action -> card_PROC_jail_free [label="jail_free"];
+        card_COND_action -> card_PROC_move_to [label="move_to"];
+        card_COND_action -> card_PROC_birthday [label="birthday"];
+        card_COND_action -> card_PROC_collect_all [label="collect_from_all"];
+        card_PROC_collect -> card_EXIT;
+        card_PROC_pay -> card_EXIT;
+        card_PROC_jail -> card_EXIT;
+        card_PROC_jail_free -> card_EXIT;
+        card_PROC_move_to -> card_EXIT;
+        card_PROC_birthday -> card_EXIT;
+        card_PROC_collect_all -> card_EXIT;
+
+        bank_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="_check_bankruptcy_ENTRY"];
+        bank_COND [shape=diamond, fillcolor="#FFDADA", label="_check_bankruptcy_COND_is_bankrupt?"];
+        bank_PROC_remove [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="_check_bankruptcy_PROC_release_remove"];
+        bank_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="_check_bankruptcy_EXIT"];
+
+        bank_ENTRY -> bank_COND;
+        bank_COND -> bank_PROC_remove [label="yes"];
+        bank_COND -> bank_EXIT [label="no"];
+        bank_PROC_remove -> bank_EXIT;
+
+        win_ENTRY [shape=ellipse, fillcolor="#D8EBFF", label="find_winner_ENTRY"];
+        win_COND_players [shape=diamond, fillcolor="#FFDADA", label="find_winner_COND_any_players?"];
+        win_PROC_pick [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="find_winner_PROC_select_by_net_worth"];
+        win_EXIT [shape=ellipse, fillcolor="#D8EBFF", label="find_winner_EXIT"];
+
+        win_ENTRY -> win_COND_players;
+        win_COND_players -> win_EXIT [label="no -> None"];
+        win_COND_players -> win_PROC_pick [label="yes"];
+        win_PROC_pick -> win_EXIT;
+    }
+
+    // Cross-function call relationships
+    main_CALL_get_names -> names_ENTRY [style=dashed, label="call"];
+    main_PROC_run -> run_ENTRY [style=dashed, label="call"];
+    run_CALL_play_turn -> turn_ENTRY [style=dashed, label="call"];
+    run_CALL_find_winner -> win_ENTRY [style=dashed, label="call"];
+
+    turn_CALL_jail -> jail_ENTRY [style=dashed, label="call"];
+    turn_CALL_roll -> dice_roll_ENTRY [style=dashed, label="call"];
+    turn_CALL_move -> move_ENTRY [style=dashed, label="call"];
+
+    move_CALL_player -> player_move_ENTRY [style=dashed, label="call"];
+    move_CALL_property -> prop_ENTRY [style=dashed, label="call"];
+    move_CALL_bankrupt -> bank_ENTRY [style=dashed, label="call"];
+    move_CALL_chance -> card_ENTRY [style=dashed, label="call"];
+    move_CALL_chest -> card_ENTRY [style=dashed, label="call"];
+
+    prop_CALL_buy -> buy_ENTRY [style=dashed, label="call"];
+    prop_CALL_rent -> rent_ENTRY [style=dashed, label="call"];
+
+    rent_PROC_transfer -> rent_ENTRY [style=invis];
+    card_PROC_move_to -> prop_ENTRY [style=dashed, label="if landed on property"];
+    win_PROC_pick -> player_net_ENTRY [style=dashed, label="uses net_worth"];
+
+    subgraph cluster_legend {
+        label="Legend";
+        color="#B6BDC5";
+
+        leg_entry [shape=ellipse, fillcolor="#D8EBFF", label="ENTRY/EXIT"];
+        leg_cond [shape=diamond, fillcolor="#FFDADA", label="COND"];
+        leg_proc [shape=box, style="rounded,filled", fillcolor="#DAF7DC", label="PROC"];
+        leg_call [shape=box, style="rounded,dashed,filled", fillcolor="#FFF5CC", label="CALL"];
+
+        leg_entry -> leg_cond [style=invis];
+        leg_cond -> leg_proc [style=invis];
+        leg_proc -> leg_call [style=invis];
+    }
+}
